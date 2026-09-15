@@ -18,7 +18,7 @@ async function centralBookings() {
 }
 async function centralInsertBooking(payload) {
   if (!sb) return {data:null,error:new Error("Supabase non configuré")};
-  return await sb.from("reservations").insert(payload).select().single();
+  return await sb.from("reservations").insert(payload);
 }
 </script>
 <header><div class="wrap"><b>AGRNSM – Réserve Naturelle Nationale de Saint-Martin</b></div></header>
@@ -131,6 +131,7 @@ async function book(e){
     time: time.value,
     half_day: half,
     level: studentlevel.value,
+    class_letter: (document.getElementById("classletter")?.value || ""),
     students: Number(students.value),
     notes: notes.value.trim(),
     status:"Demande"
