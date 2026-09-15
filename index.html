@@ -14,7 +14,7 @@ async function centralBookings() {
   if (!sb) return B;
   const { data, error } = await sb.from("reservations_public").select("date,half_day,status");
   if (error) { console.error(error); return []; }
-  return data || [];
+  return (data || []).map(r => ({date:r.date, time:r.half_day === "matin" ? "09:00" : "14:00", halfDay:r.half_day, status:r.status}));
 }
 async function centralInsertBooking(payload) {
   if (!sb) return {data:null,error:new Error("Supabase non configuré")};
@@ -23,11 +23,27 @@ async function centralInsertBooking(payload) {
 </script>
 <header><div class="wrap"><b>AGRNSM – Réserve Naturelle Nationale de Saint-Martin</b></div></header>
 <section class="hero"><div class="wrap"><h1>Réservez une intervention pédagogique</h1><p class="muted">Choisissez une thématique et envoyez votre demande à l’équipe pédagogique de l’AGRNSM.</p>
-<div class="filters"><input id="q" placeholder="Rechercher une intervention..." oninput="render()"><select id="cat" onchange="render()"></select><select id="lev" onchange="render()"><option value="">Tous les niveaux</option><option>Cycle 2</option><option>Cycle 3</option><option>Collège</option><option>Lycée</option></select><button onclick="resetFilters()">Réinitialiser</button></div></div></section>
+<div class="filters"><input id="q" placeholder="Rechercher une intervention..." oninput="render()"><select id="cat" onchange="render()"></select><select id="lev" onchange="render()"><option value="">Tous les niveaux</option>
+<option>PS</option><option>MS</option><option>GS</option>
+<option>CP</option><option>CE1</option><option>CE2</option>
+<option>CM1</option><option>CM2</option>
+<option>6ème</option><option>5ème</option><option>4ème</option><option>3ème</option>
+<option>2nde</option><option>1ère</option><option>Terminale</option>
+<option>ULIS</option><option>SEGPA</option></select><button onclick="resetFilters()">Réinitialiser</button></div></div></section>
 <main class="wrap"><div style="display:flex;justify-content:space-between"><h2>Les interventions</h2><b id="count"></b></div><div id="cards" class="grid"></div>
 <section class="panel" style="margin-top:25px"><h2>Disponibilités – année scolaire complète</h2><p class="muted">Consultez en un seul coup d’œil les disponibilités de toute l’année scolaire. Chaque date permet de voir séparément le matin et l’après-midi. Une demi-journée réservée bloque les demandes supplémentaires afin de tenir compte des déplacements entre établissements.</p><div class="legend"><span>🟢 Matin / après-midi libre</span><span>🟠 Demi-journée réservée</span><span>🔴 Journée indisponible</span></div><div id="cal" class="schoolyear"></div></section>
 <section class="panel" style="margin-top:25px"><h2>Administration</h2><button onclick="openAdmin()">Ouvrir l’espace administrateur</button></section></main>
-<div id="modal" class="modal"><div class="modalbox"><button class="close" onclick="closeModal()">✕</button><h2 id="title"></h2><p id="desc" class="muted"></p><div id="notice"></div><form class="form" onsubmit="book(event)"><input type="hidden" id="activity"><input required id="teacher" placeholder="Nom de l’enseignant"><input required id="school" placeholder="Établissement"><input required type="email" id="email" placeholder="E-mail"><input required id="phone" placeholder="Téléphone"><input required type="date" id="date"><input required type="time" id="time"><div class="full muted" style="margin-top:-8px">ℹ️ L’heure indique le début de l’intervention. Une réservation bloque toute la demi-journée afin de prévoir les déplacements entre établissements.</div><select required id="studentlevel"><option value="">Niveau</option><option>Cycle 2</option><option>Cycle 3</option><option>Collège</option><option>Lycée</option></select><input required type="number" min="1" max="60" id="students" placeholder="Nombre d’élèves"><textarea id="notes" class="full" rows="3" placeholder="Précisions"></textarea><button class="full">Envoyer la demande</button></form></div></div>
+<div id="modal" class="modal"><div class="modalbox"><button class="close" onclick="closeModal()">✕</button><h2 id="title"></h2><p id="desc" class="muted"></p><div id="notice"></div><form class="form" onsubmit="book(event)"><input type="hidden" id="activity"><input required id="teacher" placeholder="Nom de l’enseignant"><input required id="school" placeholder="Établissement"><input required type="email" id="email" placeholder="E-mail"><input required id="phone" placeholder="Téléphone"><input required type="date" id="date"><input required type="time" id="time"><div class="full muted" style="margin-top:-8px">ℹ️ L’heure indique le début de l’intervention. Une réservation bloque toute la demi-journée afin de prévoir les déplacements entre établissements.</div><select required id="studentlevel"><option value="">Niveau</option>
+<option>PS</option><option>MS</option><option>GS</option>
+<option>CP</option><option>CE1</option><option>CE2</option>
+<option>CM1</option><option>CM2</option>
+<option>6ème</option><option>5ème</option><option>4ème</option><option>3ème</option>
+<option>2nde</option><option>1ère</option><option>Terminale</option>
+<option>ULIS</option><option>SEGPA</option></select><select id="classletter" title="Lettre de classe (facultative)">
+<option value="">Lettre de classe (facultatif)</option>
+<option>A</option><option>B</option><option>C</option>
+<option>D</option><option>E</option><option>F</option>
+</select><input required type="number" min="1" max="60" id="students" placeholder="Nombre d’élèves"><textarea id="notes" class="full" rows="3" placeholder="Précisions"></textarea><button class="full">Envoyer la demande</button></form></div></div>
 <script>
 const INITIAL=[{"id": "theme-1", "numero": 1, "category": "La Réserve Naturelle", "name": "La Réserve Naturelle Nationale de Saint Martin", "duration": "1h30", "content": "Qu'est ce qu'une Réserve ? A quoi sert une Réserve ? Pourquoi Créer une Réserve ? A cause de qui ou quoi on créer des Réserves ? Quels sont les différents métiers de la Réserve ?", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-2", "numero": 2, "category": "Les écosystèmes", "name": "Les différents écosytèmes de Saint Martin", "duration": "1h30", "content": "Qu'est ce qu'un écosystème et découverte des écosystèmes marins et terrestres de Saint Martin", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-6", "numero": 6, "category": "Les écosystèmes", "name": "Le récif corallien", "duration": "1h30", "content": "Le corail, fonctionnement, services, menaces, etc…", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-18", "numero": 18, "category": "Les écosystèmes", "name": "Le protocole reef-Check", "duration": "1h30", "content": "Les suivis Reef-Check, méthode et enjeux \"mise en situation\"", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-7", "numero": 7, "category": "Les écosystèmes", "name": "Les herbiers", "duration": "1h30", "content": "Les herbiers, fonctionnement, services, menaces, etc…", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-8", "numero": 8, "category": "Les écosystèmes", "name": "La mangrove", "duration": "1h30", "content": "La mangrove, fonctionnement, services, menaces, etc…", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-24", "numero": 24, "category": "Les écosystèmes", "name": "La chaine alimentaire", "duration": "1h30", "content": "les relations entre les etres vivant au sein des écosystèmes et l'impact sur la biodiversité", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-31", "numero": 31, "category": "Les espèces exotiques envahissantes", "name": "Les espèces exotiques envahissantes", "duration": "1h30", "content": "origine, impact, réglementation et conséquences", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-32", "numero": 32, "category": "Les espèces exotiques envahissantes", "name": "Les espèces exotiques envahissantes de saint Martin", "duration": "1h30", "content": "Histoire de SXM, espéces animales et végétales, origine,  introduction et impact", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-38", "numero": 38, "category": "La Réserve Naturelle", "name": "Gestion des Éspèces Exotiques Envahissantes", "duration": "1h30", "content": "Pourquoi gérer les EEE, detection des espèces, methode et lutte", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-3", "numero": 3, "category": "La faune et la flore", "name": "La faune et la flore sauvage de Saint Martin", "duration": "2h", "content": "Quelles sont les grandes familles d'animaux et de végétaux sauvages de Saint Martin", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-9", "numero": 9, "category": "Les mammifères marins", "name": "Les mammifères marins", "duration": "1h30", "content": "Les grandes éspéces, mode de vie et menaces", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-19", "numero": 19, "category": "Les mammifères marins", "name": "La migration des baleines à bosse", "duration": "1h30", "content": "Pourquoi, quand, comment, menaces", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-25", "numero": 25, "category": "Les mammifères marins", "name": "La mission mégara", "duration": "1h30", "content": "Le rôle et les actions de la mission MEGARA", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-10", "numero": 10, "category": "Les reptiles", "name": "Les reptiles", "duration": "1h30", "content": "Les grandes éspéces, mode de vie et menaces", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-20", "numero": 20, "category": "Les tortues marines", "name": "Les tortues marines", "duration": "2h", "content": "Histoire, les éspèces, cycle de vie, menaces, etc...", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-36", "numero": 36, "category": "Les tortues marines", "name": "Diagnostique de plage", "duration": "1h", "content": "Site de ponte des tortues marines, composition et comment déterminer si le site est propice aux pontes", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-40", "numero": 40, "category": "Les tortues marines", "name": "Photo identification des tortues marines", "duration": "1h", "content": "Étude et identification des tortues marines, Connaissances sur la population des TM et leurs déplacements", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-26", "numero": 26, "category": "Les reptiles", "name": "Les iguanes", "duration": "1h", "content": "les différentes éspèces d'iguanes", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-29", "numero": 29, "category": "Les reptiles", "name": "L'iguane Péyi et rayé", "duration": "1h", "content": "Espèce indigéne de St Martin, sa disparition", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-11", "numero": 11, "category": "Les oiseaux", "name": "Les oiseaux", "duration": "1h30", "content": "Les grandes éspéces, mode de vie et menaces", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-21", "numero": 21, "category": "Les oiseaux", "name": "Le pélican brun", "duration": "1h30", "content": "les différentes éspèces de pelicans", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-27", "numero": 27, "category": "Les oiseaux", "name": "Le paille en queue", "duration": "1h", "content": "les différentes éspèces de paille en queue", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-37", "numero": 37, "category": "Les oiseaux", "name": "Les Limicoles", "duration": "1h30", "content": "Oiseaux vivant dans les mangroves, mode de vie, menaces et les espèces presentes", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-12", "numero": 12, "category": "Les poissons", "name": "Les poissons", "duration": "1h30", "content": "Les grandes éspéces, mode de vie et menaces", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-22", "numero": 22, "category": "Les poissons", "name": "Le mérou", "duration": "1h30", "content": "les différentes éspèces de mérous, leurs vie et le Life", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-28", "numero": 28, "category": "Les requins", "name": "Le Life Biodiv'OM", "duration": "1h30", "content": "Programme Life Biodiv'OM", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-30", "numero": 30, "category": "Les crustacés", "name": "Les requins", "duration": "1h30", "content": "les différentes éspèces de requins", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-39", "numero": 39, "category": "Les poissons", "name": "Projet \"One Shark\"", "duration": "1h", "content": "Projet concernant l'étude des requins autour de Saint Martin, recherche des requins impliqué dans des accidents de morsures sur des personnes.", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-34", "numero": 34, "category": "La Réserve Naturelle", "name": "Les crustacés \"les crabes\"", "duration": "1h", "content": "Définition, histoire, mode de vie et menaces et différentes éspéces de crabes", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-33", "numero": 33, "category": "La Réserve Naturelle", "name": "L'histoire de Saint Martin", "duration": "1h30", "content": "Grande dates de l'histoire de Saint Martin et de la RNN, impact sur le milieu, notions d' EEE", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-4", "numero": 4, "category": "Les services écosystémiques", "name": "Les différents services écosystèmiques", "duration": "1h", "content": "A quoi nous servent les écosystèmes, quels sont leurs rôles et chronologie de l'évolution des écosystèmes", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-13", "numero": 13, "category": "Les services écosystémiques", "name": "La pollution et les riques climatiques", "duration": "1h30", "content": "Histoire, polution naturelle et humaine, quels sont les conséquences", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-23", "numero": 23, "category": "Les services écosystémiques", "name": "Le dévelloppement durable", "duration": "1h", "content": "qu'est ce que le dévelloppement durable, protéger, restaurer et gérer", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-14", "numero": 14, "category": "Les services écosystémiques", "name": "Pourquoi l'eau de mer est salée", "duration": "1h30", "content": "Histoire de l'eau, composition et cycle de l'eau", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-15", "numero": 15, "category": "Les services écosystémiques", "name": "Évolution du vivant sur terre", "duration": "1h30", "content": "Théorie de l'évolution et les conséquences sur l'environnement", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-35", "numero": 35, "category": "Les services écosystémiques", "name": "Le biomimétisme", "duration": "1h30", "content": "qu'est ce que le biomimétisme et comment la nature nous aide", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-16", "numero": 16, "category": "Les services écosystémiques", "name": "Les grandes épidémies et les effets sur l'environnement", "duration": "1h30", "content": "Historique des grandes pandémies et les conséquences sur le milieu naturel", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-17", "numero": 17, "category": "La flore", "name": "Le magnétisme terrestre et l'orientation", "duration": "1h30", "content": "Comprendre le magnétisme terrestre, à quoi ça sert et s'orienter", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-41", "numero": 41, "category": "La Réserve Naturelle", "name": "Les cactus", "duration": "1h30", "content": "Les cactus, histoire, origine, fonctionnement, menaces", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "theme-5", "numero": 5, "category": "La Réserve Naturelle", "name": "La RNN + écosystémes + CDL", "duration": "1h30", "content": "qu'est-ce que le gestionnaire du CDL ?", "levels": ["Cycle 2", "Cycle 3", "Collège", "Lycée"], "active": true}, {"id": "concours-1", "numero": "", "category": "Concours de la biodiversité", "name": "Concours de la biodiversité – Présentation", "duration": "À définir", "content": "À compléter par l’AGRNSM.", "levels": ["Cycle 3", "Collège"], "active": true}, {"id": "concours-2", "numero": "", "category": "Concours de la biodiversité", "name": "Concours de la biodiversité – Préparation", "duration": "À définir", "content": "À compléter par l’AGRNSM.", "levels": ["Cycle 3", "Collège"], "active": true}, {"id": "concours-3", "numero": "", "category": "Concours de la biodiversité", "name": "Concours de la biodiversité – Finale", "duration": "À définir", "content": "À compléter par l’AGRNSM.", "levels": ["Cycle 3", "Collège"], "active": true}];
 const CATS=["La Réserve Naturelle", "Les écosystèmes", "La faune et la flore", "Les tortues marines", "Les poissons", "Les requins", "Les mammifères marins", "Les oiseaux", "Les services écosystémiques", "Les espèces exotiques envahissantes", "Les crustacés", "Les reptiles", "Concours de la biodiversité"];
@@ -36,10 +52,37 @@ let B=JSON.parse(localStorage.getItem("agrnsmBookings")||"[]");
 let BL=JSON.parse(localStorage.getItem("agrnsmBlocked")||"[]");
 let selected=null;
 function init(){cat.innerHTML='<option value="">Tous les thèmes principaux</option>'+CATS.map(x=>'<option>'+x+'</option>').join('');render();drawCal()}
+function levelMatches(a,l){
+  if(!l) return true;
+  const groups = {
+    "PS":["Cycle 1"], "MS":["Cycle 1"], "GS":["Cycle 1"],
+    "CP":["Cycle 2"], "CE1":["Cycle 2"], "CE2":["Cycle 2"],
+    "CM1":["Cycle 3"], "CM2":["Cycle 3"],
+    "6ème":["Collège"], "5ème":["Collège"], "4ème":["Collège"], "3ème":["Collège"],
+    "2nde":["Lycée"], "1ère":["Lycée"], "Terminale":["Lycée"],
+    "ULIS":["Cycle 2","Cycle 3","Collège","Lycée"],
+    "SEGPA":["Collège"]
+  };
+  return (groups[l]||[l]).some(g => a.levels.includes(g));
+}
+function classLabel(){
+  const n = document.getElementById("studentlevel")?.value || "";
+  const l = document.getElementById("classletter")?.value || "";
+  return l ? n + " " + l : n;
+}
 async function render(){
-  if (sb) B = await centralBookings();let s=q.value.toLowerCase(),c=cat.value,l=lev.value;let x=A.filter(a=>a.active!==false&&(!s||a.name.toLowerCase().includes(s)||String(a.content).toLowerCase().includes(s)||a.category.toLowerCase().includes(s))&&(!c||a.category===c)&&(!l||a.levels.includes(l)));count.textContent=x.length+' intervention(s)';cards.innerHTML=x.map(a=>'<article class="card"><span class="tag">'+a.category+'</span><h3>'+a.name+'</h3><p class="muted">'+(a.content||'Description à compléter.')+'</p><p class="muted">⏱ '+a.duration+' · '+a.levels.join(' · ')+'</p><button onclick="openBook(\''+a.id+'\')">Voir et réserver</button></article>').join('')||'<p>Aucune intervention trouvée.</p>'}
+  if (sb) B = await centralBookings();let s=q.value.toLowerCase(),c=cat.value,l=lev.value;let x=A.filter(a=>a.active!==false&&(!s||a.name.toLowerCase().includes(s)||String(a.content).toLowerCase().includes(s)||a.category.toLowerCase().includes(s))&&(!c||a.category===c)&&levelMatches(a,l));count.textContent=x.length+' intervention(s)';cards.innerHTML=x.map(a=>'<article class="card"><span class="tag">'+a.category+'</span><h3>'+a.name+'</h3><p class="muted">'+(a.content||'Description à compléter.')+'</p><p class="muted">⏱ '+a.duration+' · '+a.levels.join(' · ')+'</p><button onclick="openBook(\''+a.id+'\')">Voir et réserver</button></article>').join('')||'<p>Aucune intervention trouvée.</p>'}
 function resetFilters(){q.value='';cat.value='';lev.value='';render()}
-function openBook(id){selected=A.find(x=>x.id===id);title.textContent=selected.name;desc.textContent=(selected.content||'')+' Durée : '+selected.duration;activity.value=selected.name;notice.innerHTML='';modal.style.display='flex'}
+function openBook(id){
+  selected=A.find(x=>x.id===id);
+  title.textContent=selected.name;
+  desc.textContent=(selected.content||'')+' Durée : '+selected.duration;
+  activity.value=selected.id;
+  notice.innerHTML='';
+  document.getElementById("availabilityWarning")?.remove();
+  modal.style.display='flex';
+  setTimeout(updateTimeAvailability,0);
+}
 function closeModal(){modal.style.display='none'}
 
 function timeToMin(t){
@@ -69,24 +112,50 @@ function updateTimeAvailability(){
     btn.before(msg); btn.disabled=true; btn.style.opacity=".5";
   }
 }
-function book(e){
+async function book(e){
   e.preventDefault();
   if(!selected) return;
+  await render();
   if(sameHalfDayConflict(date.value,time.value)){
-    updateTimeAvailability(); return;
+    updateTimeAvailability();
+    return;
   }
   const half=halfDayOf(time.value);
-  B.push({
-    id:Date.now(),date:date.value,time:time.value,halfDay:half,
-    teacher:teacher.value,school:school.value,email:email.value,phone:phone.value,
-    level:studentlevel.value,students:+students.value,activity:activity.value,
-    duration:selected.duration,notes:notes.value,status:"Demande"
-  });
-  localStorage.setItem("agrnsmBookings",JSON.stringify(B));
-  notice.innerHTML='<div class="success"><b>Réservation enregistrée.</b><br>La demi-journée '+(half==="matin"?"du matin":"de l’après-midi")+' est désormais bloquée pour cette date. L’heure de début reste : '+time.value+'.</div>';
-  e.target.reset(); drawCal();
+  const payload={
+    activity_id: selected.numero ? Number(selected.numero) : 0,
+    teacher: teacher.value.trim(),
+    school: school.value.trim(),
+    email: email.value.trim(),
+    phone: phone.value.trim(),
+    date: date.value,
+    time: time.value,
+    half_day: half,
+    level: studentlevel.value,
+    students: Number(students.value),
+    notes: notes.value.trim(),
+    status:"Demande"
+  };
+  if(sb){
+    const {error}=await centralInsertBooking(payload);
+    if(error){
+      const msg=String(error.message||'');
+      if(/duplicate|unique|reservations_one_active_halfday/i.test(msg)){
+        alert("Cette demi-journée vient d’être réservée. Merci de choisir une autre date ou demi-journée.");
+        await render(); updateTimeAvailability();
+      }else{
+        alert("Impossible d’enregistrer la demande : "+msg);
+      }
+      return;
+    }
+  }else{
+    B.push({id:Date.now(),date:date.value,time:time.value,halfDay:half,teacher:teacher.value,school:school.value,email:email.value,phone:phone.value,level:studentlevel.value,students:Number(students.value),activity:selected.id,duration:selected.duration,notes:notes.value,status:"Demande"});
+    localStorage.setItem("agrnsmBookings",JSON.stringify(B));
+  }
+  notice.innerHTML='<div class="success"><b>Demande enregistrée.</b><br>La demi-journée '+(half==="matin"?"du matin":"de l’après-midi")+' est désormais bloquée pour cette date, en attente de validation par l’AGRNSM. L’heure de début reste : '+time.value+'.</div>';
+  e.target.reset();
+  await render();
+  drawCal();
 }
-
 function schoolYearStart(){
   const now=new Date(), y=now.getFullYear(), m=now.getMonth();
   // Année scolaire : septembre à juin.
@@ -115,6 +184,9 @@ function drawCal(){
 }
 
 function openAdmin(){let u=prompt('Identifiant');let p=prompt('Mot de passe');if(u==='admin'&&p==='agrnsm2026')location.href='admin.html';else alert('Identifiants incorrects')}
+date.addEventListener("change", updateTimeAvailability);
+time.addEventListener("change", updateTimeAvailability);
+time.addEventListener("input", updateTimeAvailability);
 init();
 </script><div id="configHelp" style="display:none"></div>
 <script>
