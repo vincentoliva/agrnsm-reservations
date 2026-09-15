@@ -14,7 +14,9 @@ async function centralBookings() {
   if (!sb) return B;
   const { data, error } = await sb.from("reservations_public").select("date,half_day,status");
   if (error) { console.error(error); return []; }
-  return (data || []).map(r => ({date:r.date, time:r.half_day === "matin" ? "09:00" : "14:00", halfDay:r.half_day, status:r.status}));
+  return (data || [])
+  .filter(r => r.status === "Demande" || r.status === "Confirmée")
+  .map(r => ({date:r.date, time:r.half_day === "matin" ? "09:00" : "14:00", halfDay:r.half_day, status:r.status}));
 }
 async function centralInsertBooking(payload) {
   if (!sb) return {data:null,error:new Error("Supabase non configuré")};
