@@ -33,7 +33,7 @@ async function centralInsertBooking(payload) {
 <option>2nde</option><option>1ère</option><option>Terminale</option>
 <option>ULIS</option><option>SEGPA</option></select><button onclick="resetFilters()">Réinitialiser</button></div></div></section>
 <main class="wrap"><div style="display:flex;justify-content:space-between"><h2>Les interventions</h2><b id="count"></b></div><div id="cards" class="grid"></div>
-<section class="panel" style="margin-top:25px"><h2>Disponibilités – année scolaire complète</h2><p class="muted">Consultez en un seul coup d’œil les disponibilités de toute l’année scolaire. Chaque date permet de voir séparément le matin et l’après-midi. Une demi-journée réservée bloque les demandes supplémentaires afin de tenir compte des déplacements entre établissements.</p><div class="legend"><span>🟢 Matin / après-midi libre</span><span>🟠 Demi-journée réservée</span><span>🔴 Journée indisponible</span></div><div id="cal" class="schoolyear"></div></section>
+<section class="panel" style="margin-top:25px"><h2>Disponibilités – 10 années scolaires</h2><p class="muted">Consultez les disponibilités de l’année scolaire choisie. Le calendrier couvre 10 années scolaires consécutives, de septembre à juin. Chaque date permet de voir séparément le matin et l’après-midi.</p><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 15px"><label for="schoolyearSelect"><b>Année scolaire :</b></label><select id="schoolyearSelect" style="max-width:240px" onchange="drawCal()"></select></div><div class="legend"><span>🟢 Matin / après-midi libre</span><span>🟠 Demi-journée réservée</span><span>🔴 Journée indisponible</span></div><div id="cal" class="schoolyear"></div></section>
 <section class="panel" style="margin-top:25px"><h2>Administration</h2><button onclick="openAdmin()">Ouvrir l’espace administrateur</button></section></main>
 <div id="modal" class="modal"><div class="modalbox"><button class="close" onclick="closeModal()">✕</button><h2 id="title"></h2><p id="desc" class="muted"></p><div id="notice"></div><form class="form" onsubmit="book(event)"><input type="hidden" id="activity"><input required id="teacher" placeholder="Nom de l’enseignant"><input required id="school" placeholder="Établissement"><input required type="email" id="email" placeholder="E-mail"><input required id="phone" placeholder="Téléphone"><input required type="date" id="date"><input required type="time" id="time"><div class="full muted" style="margin-top:-8px">ℹ️ L’heure indique le début de l’intervention. Une réservation bloque toute la demi-journée afin de prévoir les déplacements entre établissements.</div><select required id="studentlevel"><option value="">Niveau</option>
 <option>PS</option><option>MS</option><option>GS</option>
@@ -159,18 +159,27 @@ async function book(e){
   await render();
   drawCal();
 }
-function schoolYearStart(){
+function currentSchoolYearStart(){
   const now=new Date(), y=now.getFullYear(), m=now.getMonth();
   // Année scolaire : septembre à juin.
-  return m>=8 ? new Date(y,8,1) : new Date(y-1,8,1);
+  return m>=8 ? y : y-1;
 }
 function fmtDate(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function initSchoolYearSelector(){
+  const base=currentSchoolYearStart();
+  schoolyearSelect.innerHTML=Array.from({length:10},(_,i)=>{
+    const y=base+i;
+    return '<option value="'+y+'">'+y+' – '+(y+1)+'</option>';
+  }).join('');
+}
 function drawCal(){
-  const start=schoolYearStart();
-  const monthNames=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const startYear=Number(schoolyearSelect.value || currentSchoolYearStart());
+  const monthNames=['Septembre','Octobre','Novembre','Décembre','Janvier','Février','Mars','Avril','Mai','Juin'];
+  const monthNumbers=[8,9,10,11,0,1,2,3,4,5];
   const dows=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-  cal.innerHTML=Array.from({length:10},(_,i)=>{
-    const dt=new Date(start.getFullYear(),start.getMonth()+i,1), y=dt.getFullYear(), m=dt.getMonth();
+  cal.innerHTML=monthNumbers.map((monthIndex,i)=>{
+    const y=monthIndex>=8 ? startYear : startYear+1;
+    const m=monthIndex;
     const days=new Date(y,m+1,0).getDate();
     let first=(new Date(y,m,1).getDay()+6)%7;
     let cells='';
@@ -182,7 +191,7 @@ function drawCal(){
       let info=blocked?'🔴 Indisponible':((am?'🟠 Matin réservé':'🟢 Matin libre')+'<br>'+(pm?'🟠 Après-midi réservée':'🟢 Après-midi libre'));
       cells+='<div class="day '+cls+'" title="'+ds+'"><span class="num">'+n+'</span><small>'+info+'</small></div>';
     }
-    return '<div class="month"><h3>'+monthNames[m]+' '+y+'</h3><div class="week">'+dows.map(x=>'<div class="dow">'+x+'</div>').join('')+'</div><div class="monthdays">'+cells+'</div></div>';
+    return '<div class="month"><h3>'+monthNames[i]+' '+y+'</h3><div class="week">'+dows.map(x=>'<div class="dow">'+x+'</div>').join('')+'</div><div class="monthdays">'+cells+'</div></div>';
   }).join('');
 }
 
@@ -190,6 +199,8 @@ function openAdmin(){let u=prompt('Identifiant');let p=prompt('Mot de passe');if
 date.addEventListener("change", updateTimeAvailability);
 time.addEventListener("change", updateTimeAvailability);
 time.addEventListener("input", updateTimeAvailability);
+initSchoolYearSelector();
+drawCal();
 init();
 </script><div id="configHelp" style="display:none"></div>
 
