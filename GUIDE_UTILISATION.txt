@@ -1,0 +1,33 @@
+AGRNSM – GUIDE RAPIDE
+
+1. Ouvrir index.html pour voir le site public.
+2. Ouvrir admin.html pour gérer les contenus.
+3. Connexion démo : admin / agrnsm2026
+
+GESTION DES THÈMES
+- 13 catégories principales sont déjà créées.
+- 41 interventions provenant du fichier Thèmes RNN.xlsx sont intégrées.
+- Administration > Thèmes permet de modifier le nom, catégorie, durée, contenu et niveaux.
+- « Ajouter » permet de créer une nouvelle intervention.
+
+GESTION DU CALENDRIER
+- Administration > Calendrier > choisir une date > Bloquer.
+- Les demandes apparaissent comme réservées.
+- La version actuelle est un prototype local : pour un vrai site Internet partagé par toutes les écoles, il faudra connecter une base de données.
+
+CATÉGORIES PRINCIPALES
+1. La Réserve Naturelle
+2. Les écosystèmes
+3. La faune et la flore
+4. Les tortues marines
+5. Les poissons
+6. Les requins
+7. Les mammifères marins
+8. Les oiseaux
+9. Les services écosystémiques
+10. Les espèces exotiques envahissantes
+11. Les crustacés
+12. Les reptiles
+13. Concours de la biodiversité
+
+Remarque : « Concours de la biodiversité » est prévu comme catégorie principale prête à recevoir ses activités. Il n'y avait pas de ligne correspondante dans le fichier Excel fourni, donc aucun contenu n'a été inventé.

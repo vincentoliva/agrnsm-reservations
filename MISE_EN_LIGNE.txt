@@ -1,0 +1,23 @@
+AGRNSM – VERSION CONNECTÉE À SUPABASE
+========================================
+
+La version fournie est préconfigurée avec :
+Project URL : https://gaibbuhqjbaltmrtnnkw.supabase.co
+
+La clé utilisée est la Publishable key Supabase. Elle peut être présente dans le
+code du navigateur. Ne jamais ajouter une clé Secret/service_role.
+
+IMPORTANT :
+1. Le fichier schema.sql doit déjà avoir été exécuté dans Supabase.
+2. Vérifier dans Table Editor que la table "reservations" existe.
+3. Créer un utilisateur administrateur dans Supabase > Authentication > Users.
+4. Le site public peut alors envoyer les demandes dans la base centrale.
+5. admin.html permet à un utilisateur authentifié de consulter/valider les demandes.
+
+HÉBERGEMENT :
+La prochaine étape est GitHub + Cloudflare Pages.
+On peut mettre le dossier sur GitHub puis connecter le dépôt à Cloudflare Pages.
+
+TEST :
+Avant la mise en ligne, ouvrir index.html.
+Si le site est connecté, le bandeau "Mode démonstration" ne doit plus apparaître.
